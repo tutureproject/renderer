@@ -1,5 +1,5 @@
 <template>
-  <div :class="className" :contenteditable="false" >
+  <div :class="className" :contenteditable="false">
     <div
       :class="{
         'image-view__body--focused': selected,
@@ -9,13 +9,13 @@
       @click.prevent="selectImage"
     >
       <img
-          :src="src"
-          :title="title"
-          :alt="alt"
-          :width="width"
-          :height="height"
-          class="image-view__body__image"
-        />
+        :src="src"
+        :title="title"
+        :alt="alt"
+        :width="width"
+        :height="height"
+        class="image-view__body__image"
+      />
 
       <div
         v-if="view.editable"
@@ -37,7 +37,9 @@
       @blur="handleBlur"
       :tabindex="-1"
       :contenteditable="true"
-    >{{ alt }}</p>
+    >
+      {{ alt }}
+    </p>
     <!-- <input
       type="file"
       ref="image"
@@ -48,23 +50,23 @@
 </template>
 
 <script>
-import { ResizeObserver } from "@juggle/resize-observer";
-import { resolveImg, RESIZE_DIRECTION } from "../utils/image";
-import { NodeSelection } from "prosemirror-state";
-import { deleteSelection } from "prosemirror-commands";
-import mediumZoom from "medium-zoom";
-import { clamp } from "../utils/shared";
-import { setTextSelection } from "prosemirror-utils";
+import { ResizeObserver } from '@juggle/resize-observer';
+import { resolveImg, RESIZE_DIRECTION } from '../utils/image';
+import { NodeSelection } from 'prosemirror-state';
+import { deleteSelection } from 'prosemirror-commands';
+import mediumZoom from 'medium-zoom';
+import { clamp } from '../utils/shared';
+import { setTextSelection } from 'prosemirror-utils';
 
 export default {
   props: [
-    "node",
-    "updateAttrs",
-    "view",
-    "getPos",
-    "selected",
-    "editor",
-    "handleSelect",
+    'node',
+    'updateAttrs',
+    'view',
+    'getPos',
+    'selected',
+    'editor',
+    'handleSelect',
   ],
   data() {
     return {
@@ -89,7 +91,7 @@ export default {
         y: 0,
         w: 0,
         h: 0,
-        dir: "",
+        dir: '',
       },
     };
   },
@@ -115,13 +117,13 @@ export default {
       });
     },
     imageViewClass() {
-      return [""];
+      return [''];
     },
     className() {
       const { layoutClass } = this.node.attrs;
       const className = layoutClass
         ? `image-view image image-${layoutClass}`
-        : "image-view image";
+        : 'image-view image';
 
       return className;
     },
@@ -143,9 +145,9 @@ export default {
     this.resizeObj.observe(this.view.dom);
 
     // 之后再优化
-    const image  = document.querySelector('.data-zommable');
+    const image = document.querySelector('.data-zommable');
     mediumZoom(image, {
-      background: "#FFF",
+      background: '#FFF',
     });
   },
   beforeDestroy() {
@@ -158,9 +160,11 @@ export default {
     },
     selectImage() {
       // https://github.com/ueberdosis/tiptap/issues/361
-      
+
       const $pos = this.view.state.doc.resolve(this.getPos());
-      const transaction = this.view.state.tr.setSelection(new NodeSelection($pos));
+      const transaction = this.view.state.tr.setSelection(
+        new NodeSelection($pos),
+      );
 
       this.view.dispatch(transaction);
     },
@@ -208,7 +212,7 @@ export default {
       const width = clamp(w + dx, this.minSize.width, this.maxSize.width);
       const height = Math.max(
         Math.round(width / this.aspectRatio),
-        this.minSize.width
+        this.minSize.width,
       );
 
       this.updateAttrs({
@@ -228,7 +232,7 @@ export default {
         y: 0,
         w: 0,
         h: 0,
-        dir: "",
+        dir: '',
       };
 
       this.offEvents();
@@ -236,12 +240,12 @@ export default {
     },
 
     onEvents() {
-      document.addEventListener("mousemove", this.onMouseMove, true);
-      document.addEventListener("mouseup", this.onMouseUp, true);
+      document.addEventListener('mousemove', this.onMouseMove, true);
+      document.addEventListener('mouseup', this.onMouseUp, true);
     },
     offEvents() {
-      document.removeEventListener("mousemove", this.onMouseMove, true);
-      document.removeEventListener("mouseup", this.onMouseUp, true);
+      document.removeEventListener('mousemove', this.onMouseMove, true);
+      document.removeEventListener('mouseup', this.onMouseUp, true);
     },
     removeImage() {
       const { state, dispatch } = this.view;
@@ -261,7 +265,7 @@ export default {
 
       const files = e.target.files;
       const images = Array.from(files).filter((file) =>
-        /image/i.test(file.type)
+        /image/i.test(file.type),
       );
 
       if (images.length === 0) {
@@ -283,17 +287,17 @@ export default {
       });
     },
     handleKeyDown(event) {
-      console.log('keydown', event)
+      console.log('keydown', event);
 
       // Pressing Enter in the caption field should move the cursor/selection
       // below the image
-      if (event.key === "Enter") {
+      if (event.key === 'Enter') {
         event.preventDefault();
 
         const { view } = this.editor;
         const pos = this.getPos() + this.node.nodeSize;
 
-        console.log('pos', this.node)
+        console.log('pos', this.node);
         view.focus();
         view.dispatch(setTextSelection(pos)(view.state.tr));
 
@@ -302,7 +306,7 @@ export default {
 
       // Pressing Backspace in an an empty caption field should remove the entire
       // image, leaving an empty paragraph
-      if (event.key === "Backspace" && event.target.innerText === "") {
+      if (event.key === 'Backspace' && event.target.innerText === '') {
         const { view } = this.editor;
         const $pos = view.state.doc.resolve(this.getPos());
         const tr = view.state.tr.setSelection(new NodeSelection($pos));
@@ -365,53 +369,53 @@ export default {
 
   &:empty:before {
     color: #b1becc;
-    content: "Write a caption";
+    content: 'Write a caption';
     pointer-events: none;
   }
 }
 
-.ProseMirror[contenteditable="false"] {
-    .caption {
-      pointer-events: none;
-    }
-    .caption:empty {
-      visibility: hidden;
-    }
+.ProseMirror[contenteditable='false'] {
+  .caption {
+    pointer-events: none;
   }
+  .caption:empty {
+    visibility: hidden;
+  }
+}
 
- .image {
-    text-align: center;
+.image {
+  text-align: center;
+  max-width: 100%;
+  clear: both;
+
+  img {
+    display: inline-block;
     max-width: 100%;
-    clear: both;
-
-    img {
-      display: inline-block;
-      max-width: 100%;
-      max-height: 75vh;
-    }
+    max-height: 75vh;
   }
+}
 
-  .image.placeholder {
-    position: relative;
-    background: #FFF;
-    img {
-      opacity: 0.5;
-    }
+.image.placeholder {
+  position: relative;
+  background: #fff;
+  img {
+    opacity: 0.5;
   }
+}
 
-  .image-right-50 {
-    float: right;
-    width: 50%;
-    margin-left: 2em;
-    margin-bottom: 1em;
-    clear: initial;
-  }
+.image-right-50 {
+  float: right;
+  width: 50%;
+  margin-left: 2em;
+  margin-bottom: 1em;
+  clear: initial;
+}
 
-  .image-left-50 {
-    float: left;
-    width: 50%;
-    margin-right: 2em;
-    margin-bottom: 1em;
-    clear: initial;
-  }
+.image-left-50 {
+  float: left;
+  width: 50%;
+  margin-right: 2em;
+  margin-bottom: 1em;
+  clear: initial;
+}
 </style>

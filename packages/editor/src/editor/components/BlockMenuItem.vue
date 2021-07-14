@@ -1,5 +1,5 @@
 <template>
-  <div
+  <button
     ref="menuItemRef"
     class="menu-item"
     @click="handleClick"
@@ -8,7 +8,7 @@
     <font-awesome-icon :icon="icon" style=""></font-awesome-icon>
     &nbsp;&nbsp;{{ title }}
     <span class="short-cut">{{ shortcut }}</span>
-  </div>
+  </button>
 </template>
 
 <script>
@@ -74,8 +74,8 @@ export default {
 
   &:hover,
   &:active {
-    color: #000;
-    background: var(--active-background);
+    color: #000 !important;
+    background: var(--active-background) !important;
   }
 }
 

@@ -44,9 +44,9 @@ const base = {
   link: 'Link',
   linkCopied: 'Link copied to clipboard',
   mark: 'Highlight',
-  newLineEmpty: "Type '/' to insert…",
-  newLineWithSlash: 'Keep typing to filter…',
-  noResults: 'No results',
+  newLineEmpty: '输入 / 来激活菜单栏',
+  newLineWithSlash: '继续输入内容来过滤菜单栏...',
+  noResults: '没有符合条件的结果',
   openLink: 'Open link',
   orderedList: 'Ordered list',
   pasteLink: 'Paste a link…',
@@ -60,6 +60,12 @@ const base = {
   subheading: 'Subheading',
 
   diffBlock: 'DiffBlock',
+
+  //
+  cut: '剪切',
+  copy: '复制',
+  delete: '删除',
+  copyLink: '复制链接',
 };
 
 export default base;

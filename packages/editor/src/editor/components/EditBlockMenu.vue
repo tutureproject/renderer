@@ -27,7 +27,7 @@
             class="list-item"
           >
             <block-menu-item
-              :onClick="() => insertItem(item)"
+              :onClick="() => handleActionClick(item)"
               :selected="index === selectedIndex && isActive"
               :icon="item.icon"
               :title="item.title"
@@ -54,11 +54,16 @@
 <script>
 import { Portal } from '@linusborg/vue-simple-portal';
 import capitalize from 'lodash/capitalize';
-import getMenuItems from '../menus/block';
+import getMenuItems from '../menus/editBlock';
 import getDataTransferFiles from '../lib/getDataTransferFiles';
 import { findParentNode } from 'prosemirror-utils';
 import insertFiles from '../commands/insertFiles';
 import BlockMenuItem from './BlockMenuItem';
+import {
+  removeParentNodeOfType,
+  findParentNodeOfType,
+  findChildrenByType,
+} from 'prosemirror-utils';
 
 export default {
   props: [
@@ -74,6 +79,7 @@ export default {
     'onLinkToolbarOpen',
     'onClose',
     'dictionary',
+    'ancestorNodeTypeName',
   ],
   components: {
     Portal,
@@ -91,33 +97,15 @@ export default {
   },
   computed: {
     filtered() {
-      const { dictionary, embeds, search = '', uploadImage } = this.$props;
-      let items = getMenuItems(dictionary);
+      const { dictionary, search } = this.$props;
+      let { actionList, canTurnIntoMenuItems = [] } = getMenuItems(
+        this.view.state,
+        dictionary,
+        this.ancestorNodeTypeName,
+      );
 
-      // 一些可嵌入内容的支持
-      const embedItems = [];
-
-      for (const embed of embeds) {
-        if (embed.title && embed.icon) {
-          embedItems.push({
-            ...embed,
-            name: 'embed',
-          });
-        }
-      }
-
-      if (embedItems.length) {
-        items.push({
-          name: 'separator',
-        });
-        items = items.concat(embedItems);
-      }
-
-      const filtered = items.filter((item) => {
+      const filtered = actionList.filter((item) => {
         if (item.name === 'separator') return true;
-
-        // If no image upload callback has been passed, filter the image block out
-        if (!uploadImage && item.name === 'image') return false;
 
         // some items (defaultHidden) are not visible until a search query exists
         if (!search) return !item.defaultHidden;
@@ -210,7 +198,7 @@ export default {
       const { view } = props;
       const { selection } = view.state;
       const startPos = view.coordsAtPos(selection.$from.pos);
-      const ref = this.$refs.menuRef.$el;
+      const ref = this.$refs.menuRef;
       const offsetHeight = ref ? ref.offsetHeight : 0;
       const paragraph = view.domAtPos(selection.$from.pos);
 
@@ -259,6 +247,7 @@ export default {
 
       this.$props.onClose();
     },
+    insertBlockInNextLine(item) {},
     clearSearch() {
       const { state, dispatch } = this.$props.view;
       const parent = findParentNode((node) => !!node)(state.selection);
@@ -267,7 +256,7 @@ export default {
         dispatch(
           state.tr.insertText(
             '',
-            parent.pos,
+            parent.pos + 1,
             parent.pos + parent.node.textContent.length + 1,
           ),
         );
@@ -392,6 +381,95 @@ export default {
         }
         default:
           this.insertBlock(item);
+      }
+    },
+
+    tiggerCut() {},
+    tiggerCopy() {},
+    tiggerDelete(item, ancestorNodeTypeName = []) {
+      // paragraph 和 heading 的删除
+      console.log('ancestorNodeTypeName', ancestorNodeTypeName);
+      if (
+        (ancestorNodeTypeName.length === 1 &&
+          ['paragraph', 'heading'].includes(ancestorNodeTypeName[0])) ||
+        (ancestorNodeTypeName.length >= 2 &&
+          ['paragraph', 'heading'].includes(ancestorNodeTypeName[0]) &&
+          ['notice', 'blockquote'].includes(ancestorNodeTypeName[1]))
+      ) {
+        const { dispatch, state } = this.view;
+        const { schema } = state;
+
+        dispatch(
+          removeParentNodeOfType(schema.nodes[ancestorNodeTypeName[0]])(
+            state.tr,
+          ),
+        );
+      }
+
+      // list_item/todo_item 的删除
+      if (['list_item', 'todo_item'].includes(ancestorNodeTypeName[1])) {
+        const { dispatch, state } = this.view;
+        const { schema, selection } = state;
+
+        // 如果是唯一的子 item，那么删掉整个 list
+        const { node } = findParentNodeOfType(
+          schema.nodes[ancestorNodeTypeName[2]],
+        )(selection);
+
+        // 获取此节点下所有的 item 节点
+        const childNodes =
+          findChildrenByType(node, schema.nodes[ancestorNodeTypeName[1]]) || [];
+
+        if (childNodes.length === 1) {
+          dispatch(
+            removeParentNodeOfType(schema.nodes[ancestorNodeTypeName[2]])(
+              state.tr,
+            ),
+          );
+        } else {
+          dispatch(
+            removeParentNodeOfType(schema.nodes[ancestorNodeTypeName[1]])(
+              state.tr,
+            ),
+          );
+        }
+      }
+
+      // notice/blockquote/codeblock/diffblock/table/image
+      if (
+        [
+          'notice',
+          'blockquote',
+          'code_block',
+          'horizontal_rule',
+          'image',
+          'diff_block',
+          'table',
+        ].includes(ancestorNodeTypeName[0])
+      ) {
+        const { dispatch, state } = this.view;
+        const { schema } = state;
+
+        dispatch(
+          removeParentNodeOfType(schema.nodes[ancestorNodeTypeName[0]])(
+            state.tr,
+          ),
+        );
+      }
+
+      this.close();
+    },
+
+    handleActionClick(item) {
+      switch (item.name) {
+        case '剪切':
+          return this.tiggerCut(item, this.ancestorNodeTypeName);
+        case '复制':
+          return this.tiggerCopy(item, this.ancestorNodeTypeName);
+        case '删除':
+          return this.tiggerDelete(item, this.ancestorNodeTypeName);
+        default:
+          this.insertBlockInNextLine(item, this.ancestorNodeTypeName);
       }
     },
 

@@ -1,4 +1,5 @@
 const path = require('path');
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 function resolve(dir) {
   return path.join(__dirname, '.', dir);
@@ -7,7 +8,7 @@ function resolve(dir) {
 module.exports = {
   // VUE Cli 相关的配置
   configureWebpack: {
-    devtool: 'source-map',
+    devtool: 'inline-source-map',
     resolve: {
       extensions: ['.js', '.vue', '.json', '.ts'],
       alias: {
@@ -25,6 +26,7 @@ module.exports = {
         },
       ],
     },
+    plugins: [new MonacoWebpackPlugin()],
   },
   css: {
     loaderOptions: {
